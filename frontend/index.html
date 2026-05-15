@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Kubernetes Vote App</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    .subtitle {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-bottom: 2.5rem;
+      background: #1e293b;
+      padding: 6px 14px;
+      border-radius: 20px;
+    }
+    .cards { display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center; }
+    .card {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 2rem 3rem;
+      text-align: center;
+      border: 2px solid transparent;
+      transition: border 0.2s;
+      min-width: 200px;
+    }
+    .card:hover { border-color: #3b82f6; }
+    .emoji { font-size: 4rem; display: block; margin-bottom: 1rem; }
+    .vote-btn {
+      margin-top: 1rem;
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .vote-btn:hover { background: #2563eb; }
+    .vote-btn:disabled { background: #475569; cursor: not-allowed; }
+    .count {
+      font-size: 2.5rem;
+      font-weight: bold;
+      margin-top: 0.5rem;
+      color: #38bdf8;
+    }
+    .status {
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      color: #64748b;
+      background: #1e293b;
+      padding: 8px 16px;
+      border-radius: 8px;
+      max-width: 500px;
+      text-align: center;
+    }
+    .status span { color: #38bdf8; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <h1>🗳️ Kubernetes Vote App</h1>
+  <p class="subtitle">Pod-to-Pod communication demo</p>
+
+  <div class="cards">
+    <div class="card">
+      <span class="emoji">🐶</span>
+      <div>Dogs</div>
+      <div class="count" id="dogs-count">0</div>
+      <button class="vote-btn" onclick="castVote('Dogs')">Vote Dogs</button>
+    </div>
+    <div class="card">
+      <span class="emoji">🐱</span>
+      <div>Cats</div>
+      <div class="count" id="cats-count">0</div>
+      <button class="vote-btn" onclick="castVote('Cats')">Vote Cats</button>
+    </div>
+  </div>
+
+  <div class="status">
+    Frontend Pod calls → <span>http://backend-service:5000</span><br/>
+    Kubernetes DNS resolves <span>backend-service</span> to the Backend Pod IP
+  </div>
+
+  <script>
+    // BACKEND_URL uses the Kubernetes ClusterIP service DNS name
+    // When running in K8s, this resolves automatically via CoreDNS
+    const BACKEND_URL = window.BACKEND_URL || "http://backend-service:5000";
+
+    async function loadVotes() {
+      try {
+        const res = await fetch(`${BACKEND_URL}/votes`);
+        const data = await res.json();
+        document.getElementById("dogs-count").textContent = data.Dogs;
+        document.getElementById("cats-count").textContent = data.Cats;
+      } catch (e) {
+        console.error("Could not reach backend:", e);
+      }
+    }
+
+    async function castVote(option) {
+      const buttons = document.querySelectorAll(".vote-btn");
+      buttons.forEach(b => b.disabled = true);
+      try {
+        const res = await fetch(`${BACKEND_URL}/vote/${option}`, { method: "POST" });
+        const data = await res.json();
+        document.getElementById("dogs-count").textContent = data.votes.Dogs;
+        document.getElementById("cats-count").textContent = data.votes.Cats;
+      } catch (e) {
+        console.error("Vote failed:", e);
+      } finally {
+        buttons.forEach(b => b.disabled = false);
+      }
+    }
+
+    loadVotes();
+    setInterval(loadVotes, 5000); // auto-refresh every 5s
+  </script>
+</body>
+</html>
