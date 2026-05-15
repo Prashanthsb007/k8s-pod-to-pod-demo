@@ -96,7 +96,8 @@
   <script>
     // BACKEND_URL uses the Kubernetes ClusterIP service DNS name
     // When running in K8s, this resolves automatically via CoreDNS
-    const BACKEND_URL = window.BACKEND_URL || "http://backend-service:5000";
+    // const BACKEND_URL = window.BACKEND_URL || "http://backend-service:5000";
+    const BACKEND_URL = "/api";
 
     async function loadVotes() {
       try {
